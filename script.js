@@ -12,7 +12,7 @@ async function callGemini(prompt, schema) {
     try {
         // Vi anropar den relativa sökvägen /api/ai. 
         // Om din frontend och backend ligger i samma Vercel-projekt fungerar detta direkt.
-        const response = await fetch('/api/ai', {
+        const response = await fetch('https://testing-git-main-babalejons-projects.vercel.app/api/ai', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json' 
