@@ -3,204 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Svensk Compliance & Arbetsmiljö AI</title>
-    
+    <title>CompliancePro</title>
+
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- ✅ RÄTT: vanilla lucide -->
+    <!-- Lucide (vanilla icons) -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
+    <!-- React 18 -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel (för JSX i browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
+    <!-- Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
     <style>
-        body { font-family: Inter, sans-serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
     </style>
 </head>
 
 <body class="bg-slate-50">
-<div id="root"></div>
 
-<script type="text/babel">
+    <!-- React root -->
+    <div id="root"></div>
 
-const { useState, useEffect, useRef } = React;
+    <!-- Din app -->
+    <script type="text/babel" src="/script.js"></script>
 
-/**
- * ✅ React-safe Lucide wrapper
- */
-function Icon({ name, className = "" }) {
-    const ref = useRef(null);
-
-    useEffect(() => {
-        if (ref.current && lucide.icons[name]) {
-            ref.current.innerHTML = lucide.icons[name].toSvg({
-                class: className
-            });
-        }
-    }, [name, className]);
-
-    return <span ref={ref}></span>;
-}
-
-/**
- * Backend call
- */
-async function callGemini(prompt, schema) {
-    try {
-        const response = await fetch('/api/ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt, schema })
-        });
-
-        if (!response.ok) throw new Error("Serverfel");
-        return await response.json();
-    } catch (err) {
-        console.error(err);
-        return [];
-    }
-}
-
-function App() {
-    const [view, setView] = useState('home');
-    const [loading, setLoading] = useState(false);
-    const [results, setResults] = useState([]);
-    const [answers, setAnswers] = useState({
-        industry: '',
-        size: '',
-        risks: []
-    });
-
-    const toggleRisk = (risk) => {
-        setAnswers(prev => ({
-            ...prev,
-            risks: prev.risks.includes(risk)
-                ? prev.risks.filter(r => r !== risk)
-                : [...prev.risks, risk]
-        }));
-    };
-
-    const startAnalysis = async () => {
-        setLoading(true);
-
-        const prompt = `Analysera lagkrav för ${answers.industry}, ${answers.size}`;
-        const schema = {
-            type: "array",
-            items: {
-                type: "object",
-                properties: {
-                    id: { type: "string" },
-                    title: { type: "string" },
-                    summary: { type: "string" },
-                    type: { type: "string" }
-                },
-                required: ["id", "title", "summary", "type"]
-            }
-        };
-
-        const data = await callGemini(prompt, schema);
-        setResults(data);
-
-        setLoading(false);
-        setView('results');
-    };
-
-    return (
-        <div className="min-h-screen pb-20">
-
-            {/* NAV */}
-            <nav className="bg-white border-b px-6 py-4">
-                <div className="flex items-center gap-2">
-                    <div className="bg-blue-600 p-2 rounded-lg">
-                        <Icon name="shield-check" className="w-5 h-5 text-white"/>
-                    </div>
-                    <span className="font-bold text-xl">CompliancePro</span>
-                </div>
-            </nav>
-
-            <main className="max-w-4xl mx-auto mt-8 px-4">
-
-                {view === 'home' && (
-                    <div className="bg-white p-8 rounded-2xl space-y-6">
-
-                        <input
-                            placeholder="Bransch"
-                            value={answers.industry}
-                            onChange={e => setAnswers({...answers, industry: e.target.value})}
-                            className="w-full p-3 border rounded-xl"
-                        />
-
-                        <select
-                            value={answers.size}
-                            onChange={e => setAnswers({...answers, size: e.target.value})}
-                            className="w-full p-3 border rounded-xl"
-                        >
-                            <option value="">Storlek</option>
-                            <option value="1-9">1-9</option>
-                            <option value="10-49">10-49</option>
-                            <option value="50+">50+</option>
-                        </select>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            {['Tunga lyft','Kemikalier','Buller'].map(risk => (
-                                <button
-                                    key={risk}
-                                    onClick={() => toggleRisk(risk)}
-                                    className="p-3 border rounded-xl flex justify-between"
-                                >
-                                    {risk}
-                                    {answers.risks.includes(risk) &&
-                                        <Icon name="check" className="w-4 h-4"/>
-                                    }
-                                </button>
-                            ))}
-                        </div>
-
-                        <button
-                            onClick={startAnalysis}
-                            className="w-full bg-blue-600 text-white p-4 rounded-xl flex justify-center gap-2"
-                        >
-                            {loading ? "Laddar..." : (
-                                <>
-                                    <Icon name="brain-circuit" className="w-5 h-5"/>
-                                    Starta analys
-                                </>
-                            )}
-                        </button>
-
-                    </div>
-                )}
-
-                {view === 'results' && (
-                    <div className="space-y-4">
-
-                        <button onClick={() => setView('home')} className="flex gap-2">
-                            <Icon name="arrow-left" className="w-4 h-4"/>
-                            Tillbaka
-                        </button>
-
-                        {results.map(item => (
-                            <div key={item.id} className="p-4 border rounded-xl flex justify-between">
-                                <div>
-                                    <h3 className="font-bold">{item.title}</h3>
-                                    <p>{item.summary}</p>
-                                </div>
-                                <Icon name="plus-circle" className="w-5 h-5"/>
-                            </div>
-                        ))}
-
-                    </div>
-                )}
-
-            </main>
-        </div>
-    );
-}
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App />);
-
-</script>
 </body>
 </html>
