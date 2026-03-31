@@ -8,27 +8,36 @@
  * @param {string} prompt - Instruktionen till AI:n.
  * @param {object} schema - JSON-schemat för svaret.
  */
+// callGemini.js - Anropar Vercel-backend för Gemini API
 async function callGemini(prompt, schema) {
+    // 1. Kontrollera att prompt och schema finns
+    if (!prompt || !schema) {
+        console.error("Prompt eller schema saknas!");
+        return null;
+    }
+
     try {
-        // Vi anropar den relativa sökvägen /api/ai. 
-        // Om din frontend och backend ligger i samma Vercel-projekt fungerar detta direkt.
-        const response = await fetch('https://testing-git-main-babalejons-projects.vercel.app/api/ai', {
+        // 2. Anropa Vercel-serverless backend (relativ URL)
+        const response = await fetch('/api/ai', {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json' 
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt, schema })
         });
 
-        // Kontrollera om anropet lyckades (status 200-299)
+        // 3. Kontrollera att servern svarar OK
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Serverfel: ${response.status}`);
+            let errorMessage = `Serverfel: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                if (errorData.error) errorMessage = errorData.error;
+            } catch (_) {}
+            throw new Error(errorMessage);
         }
 
-        // Vercel-backenden returnerar det färdiga JSON-objektet
+        // 4. Läs JSON-svaret från backend
         const data = await response.json();
         console.log("Data mottagen från backend:", data);
+
         return data;
 
     } catch (error) {
